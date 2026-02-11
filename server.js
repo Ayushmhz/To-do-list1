@@ -222,10 +222,10 @@ app.get('/api/admin/users', async (req, res) => {
         }
 
         const [users] = await db.execute(`
-            SELECT u.id, u.username, u.email, u.password, COUNT(t.id) as taskCount 
+            SELECT u.id, u.username, u.email, u.password, COUNT(t.id) as taskcount 
             FROM users u 
             LEFT JOIN tasks t ON u.id = t.user_id 
-            GROUP BY u.id
+            GROUP BY u.id, u.username, u.email, u.password
         `);
 
         res.json({ users });
@@ -241,3 +241,4 @@ app.listen(PORT, () => {
     console.log(`✅ Server running at http://localhost:${PORT}`);
     console.log(`🛢️  Connected via PostgreSQL Connection Pool`);
 });
+
