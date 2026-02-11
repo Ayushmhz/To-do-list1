@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-do-List Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="auth-mode">
+    <div class="glass-background"></div>
+
+    <!-- Global Theme Toggle -->
+    <div class="global-actions">
+        <div class="theme-switch-container">
+            <i class="fas fa-moon"></i>
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-checkbox">
+                <span class="slider"></span>
+            </label>
+            <i class="fas fa-sun"></i>
+        </div>
+    </div>
+
+
+    <!-- Authentication Overlay -->
+    <div id="auth-overlay" class="auth-overlay">
+        <div class="auth-card glass">
+            <div class="auth-header">
+                <i class="fas fa-list-check"></i>
+                <h2 id="auth-title">Create Account</h2>
+                <p id="auth-subtitle">Join us to manage your tasks efficiently</p>
+            </div>
+
+            <!-- Sign Up Form (Default) -->
+            <form id="signup-form" class="auth-form">
+                <div id="reg-error" class="auth-error hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="reg-error-msg"></span>
+                </div>
+                <div class="form-group">
+                    <label for="reg-username">Username</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="reg-username" required placeholder="Choose a username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="reg-email" required placeholder="Enter your email">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="reg-password" required placeholder="Create a password">
+                        <i class="fas fa-eye-slash toggle-password" data-target="reg-password"></i>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary btn-block">Sign Up</button>
+                <p class="auth-switch">Already have an account? <span id="switch-to-login">Log In</span></p>
+            </form>
+
+            <!-- Login Form (Hidden) -->
+            <form id="login-form" class="auth-form hidden">
+                <div id="reg-success" class="auth-success hidden">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Registration successful! Please log in.</span>
+                </div>
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="login-username" required placeholder="Enter your username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" required placeholder="Enter your password">
+                        <i class="fas fa-eye-slash toggle-password" data-target="login-password"></i>
+                    </div>
+                </div>
+                <div id="auth-error" class="auth-error hidden">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Access Denied: Invalid credentials</span>
+                </div>
+                <button type="submit" class="btn-primary btn-block">Log In</button>
+                <p class="auth-switch">Don't have an account? <span id="switch-to-signup">Sign Up</span></p>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-container hidden" id="main-app">
+        <header>
+            <div class="logo">
+                <i class="fas fa-list-check"></i>
+                <h1>To-do-List Management System</h1>
+            </div>
+            <div class="header-actions">
+                <span id="user-display" class="user-greeting"></span>
+                <button id="admin-dash-btn" class="btn-icon hidden" title="Admin Dashboard">
+                    <i class="fas fa-user-shield"></i>
+                </button>
+                <button id="settings-open-btn" class="btn-icon" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button id="migration-open-btn" class="btn-icon" title="Transfer Data">
+                    <i class="fas fa-file-export"></i>
+                </button>
+                <button id="logout-btn" class="btn-icon btn-logout" title="Log Out">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Statistics Section -->
+            <section class="stats-container">
+                <div class="stat-card">
+                    <span class="stat-value" id="total-tasks">0</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="pending-tasks">0</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="completed-tasks">0</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+            </section>
+
+            <!-- Input Section -->
+            <section class="input-section">
+                <button id="open-modal" class="btn-primary">
+                    <i class="fas fa-plus"></i> New Task
+                </button>
+
+                <div class="filters-container">
+                    <div class="search-box">
+                        <input type="text" id="task-search" placeholder="Search tasks...">
+                    </div>
+                    <select id="filter-status">
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    <select id="filter-priority">
+                        <option value="all">All Priority</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Task List Table/List -->
+            <section class="task-list-container">
+                <div class="table-wrapper">
+                    <table id="task-table">
+                        <thead>
+                            <tr>
+                                <th class="col-status">Status</th>
+                                <th class="col-title">Task</th>
+                                <th class="col-priority">Priority</th>
+                                <th class="col-due">Due Date</th>
+                                <th class="col-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="task-body">
+                            <!-- Tasks will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="empty-state" class="empty-state hidden">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>No tasks found. Time to add some!</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2 id="modal-title">Create New Task</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="task-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label for="title">Title *</label>
+                    <input type="text" id="title" required placeholder="What needs to be done?">
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" rows="3" placeholder="Add more details..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="priority">Priority</label>
+                        <select id="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="due-date">Due Date</label>
+                        <input type="date" id="due-date">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-modal">Cancel</button>
+                    <button type="submit" class="btn-primary" id="save-task">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Migration Modal -->
+    <div id="migration-modal" class="modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2>Data Migration</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="migration-body">
+                <div class="migration-section text-center">
+                    <i class="fas fa-cloud-download-alt large-icon"></i>
+                    <h3>Export Data</h3>
+                    <p>Download all your accounts and tasks as a backup file.</p>
+                    <button id="export-btn" class="btn-primary btn-block">Download JSON</button>
+                </div>
+                <hr class="migration-divider">
+                <div class="migration-section text-center">
+                    <i class="fas fa-cloud-upload-alt large-icon"></i>
+                    <h3>Import Data</h3>
+                    <p>Restore your data from a previously exported file.</p>
+                    <input type="file" id="import-file" accept=".json" class="hidden">
+                    <button id="import-trigger-btn" class="btn-secondary btn-block">Choose File & Import</button>
+                </div>
+                <hr class="migration-divider">
+                <div id="admin-cleanup-section" class="hidden">
+                    <div class="migration-section text-center">
+                        <i class="fas fa-trash-alt large-icon danger"></i>
+                        <h3>Account Cleanup</h3>
+                        <p>Delete all accounts and tasks except for <strong>Admin_00</strong>.</p>
+                        <button id="cleanup-btn" class="btn-primary btn-danger btn-block">Delete Other Accounts</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary close-modal btn-block">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content glass modal-large">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h2><i class="fas fa-user-shield"></i> User Management Dashboard</h2>
+                    <div class="admin-quick-actions" style="display: flex; gap: 8px;">
+                        <button class="btn-small" onclick="exportData()" title="Backup All Data">
+                            <i class="fas fa-download"></i> Backup
+                        </button>
+                        <button class="btn-small" id="admin-import-trigger" title="Restore Data">
+                            <i class="fas fa-upload"></i> Restore
+                        </button>
+                    </div>
+                </div>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="admin-body">
+                <div class="table-wrapper">
+                    <table id="admin-user-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Tasks</th>
+                                <th>Password</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-user-body">
+                            <!-- Users will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2><i class="fas fa-cog"></i> Settings</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="settings-body">
+                <!-- My Account Section -->
+                <div id="settings-account">
+                    <div class="profile-info-grid">
+                        <div class="profile-info-item">
+                            <label>Username</label>
+                            <div class="profile-value" id="prof-username">---</div>
+                        </div>
+                        <div class="profile-info-item">
+                            <label>Email Address</label>
+                            <div class="profile-value" id="prof-email">---</div>
+                        </div>
+                    </div>
+
+                    <!-- Security Section -->
+                    <div class="security-section">
+                        <div class="security-header">
+                            <div class="security-info">
+                                <h3><i class="fas fa-shield-halved"></i> Security</h3>
+                                <p>Manage your account password and security settings.</p>
+                            </div>
+                            <button id="toggle-password-form" class="btn-secondary">
+                                <i class="fas fa-key"></i> Update Password
+                            </button>
+                        </div>
+
+                        <div id="password-form-container" class="hidden">
+                            <form id="change-password-form">
+                                <div id="pass-error" class="auth-error hidden">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span id="pass-error-msg"></span>
+                                </div>
+                                <div id="pass-success" class="auth-success hidden">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Password updated successfully!</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="current-password">Current Password</label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-lock"></i>
+                                        <input type="password" id="current-password" required
+                                            placeholder="Enter current password">
+                                        <i class="fas fa-eye-slash toggle-password" data-target="current-password"></i>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">New Password</label>
+                                    <div class="input-with-icon">
+                                        <i class="fas fa-key"></i>
+                                        <input type="password" id="new-password" required
+                                            placeholder="Enter new password">
+                                        <i class="fas fa-eye-slash toggle-password" data-target="new-password"></i>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary btn-block">Set New Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Specific Tasks Modal (Admin View) -->
+    <div id="user-tasks-modal" class="modal">
+        <div class="modal-content glass modal-large">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h2><i class="fas fa-tasks"></i> <span id="admin-view-username">User</span>'s Tasks</h2>
+                </div>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="admin-body">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Task</th>
+                                <th>Priority</th>
+                                <th>Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-user-tasks-body">
+                            <!-- User tasks will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="admin-empty-user-state" class="empty-state hidden">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>This user has no tasks.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary close-modal btn-block">Back to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
