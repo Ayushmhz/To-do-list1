@@ -182,7 +182,7 @@ loginForm.addEventListener('submit', async (e) => {
 logoutBtn.addEventListener('click', () => {
     localStorage.removeItem('currentUser');
     currentUser = null;
-    checkSession();
+    window.location.reload(); // Refresh to clear state
 });
 
 // Password Visibility Toggle

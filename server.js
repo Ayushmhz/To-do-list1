@@ -98,7 +98,7 @@ app.post('/api/change-password', async (req, res) => {
             return res.status(400).json({ error: 'All fields are required.' });
         }
 
-        const [users] = await db.execute('SELECT * FROM users WHERE username = ?', [username]);
+        const [users] = await db.execute('SELECT * FROM users WHERE username = $1', [username]);
         if (users.length === 0) return res.status(404).json({ error: 'User not found' });
 
         const user = users[0];
@@ -127,7 +127,8 @@ app.get('/api/tasks', async (req, res) => {
         if (!username) return res.status(400).json({ error: 'Username required' });
 
         const [tasks] = await db.execute(
-            `SELECT t.* FROM tasks t 
+            `SELECT t.id, t.title, t.description, t.priority, t.due_date AS "dueDate", t.status, t.created_at AS "createdAt"
+             FROM tasks t 
              JOIN users u ON t.user_id = u.id 
              WHERE u.username = $1 ORDER BY t.created_at DESC`,
             [username]
@@ -155,7 +156,7 @@ app.post('/api/tasks', async (req, res) => {
 
         // Fetch updated tasks
         const [tasks] = await db.execute(
-            'SELECT * FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
+            'SELECT id, title, description, priority, due_date AS "dueDate", status, created_at AS "createdAt" FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
             [user[0].id]
         );
         res.json({ success: true, tasks });
@@ -180,7 +181,7 @@ app.put('/api/tasks/:id', async (req, res) => {
         );
 
         const [tasks] = await db.execute(
-            'SELECT * FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
+            'SELECT id, title, description, priority, due_date AS "dueDate", status, created_at AS "createdAt" FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
             [user[0].id]
         );
         res.json({ success: true, tasks });
@@ -202,7 +203,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
         await db.execute('DELETE FROM tasks WHERE id = $1 AND user_id = $2', [id, user[0].id]);
 
         const [tasks] = await db.execute(
-            'SELECT * FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
+            'SELECT id, title, description, priority, due_date AS "dueDate", status, created_at AS "createdAt" FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
             [user[0].id]
         );
         res.json({ success: true, tasks });
@@ -222,7 +223,7 @@ app.get('/api/admin/users', async (req, res) => {
         }
 
         const [users] = await db.execute(`
-            SELECT u.id, u.username, u.email, u.password, COUNT(t.id) as taskcount 
+            SELECT u.id, u.username, u.email, u.password, COUNT(t.id) as "taskCount" 
             FROM users u 
             LEFT JOIN tasks t ON u.id = t.user_id 
             GROUP BY u.id, u.username, u.email, u.password

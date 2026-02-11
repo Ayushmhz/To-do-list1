@@ -128,8 +128,8 @@ taskForm.addEventListener('submit', async (e) => {
         description: document.getElementById('description').value,
         priority: document.getElementById('priority').value,
         dueDate: document.getElementById('due-date').value,
-        status: editId ? (tasks.find(t => t.id === editId).status) : 'pending',
-        createdAt: editId ? (tasks.find(t => t.id === editId).createdAt) : new Date().toISOString()
+        status: editId ? (tasks.find(t => t.id == editId).status) : 'pending',
+        createdAt: editId ? (tasks.find(t => t.id == editId).createdAt) : new Date().toISOString()
     };
 
     try {
@@ -193,7 +193,7 @@ async function toggleStatus(id) {
     const user = JSON.parse(localStorage.getItem('currentUser'));
     if (!user) return;
 
-    const task = tasks.find(t => t.id === id);
+    const task = tasks.find(t => t.id == id);
     if (!task) return;
 
     const updatedTask = { ...task, status: task.status === 'pending' ? 'completed' : 'pending' };
@@ -216,16 +216,35 @@ async function toggleStatus(id) {
     }
 }
 
+// Expose to window for inline onclicks
+window.toggleStatus = toggleStatus;
+window.editTask = editTask;
+window.deleteTask = deleteTask;
+
 function editTask(id) {
-    const task = tasks.find(t => t.id === id);
+    const task = tasks.find(t => t.id == id);
     if (!task) return;
+
+    // Handle both naming possibilities
+    const dueDate = task.dueDate || task.due_date;
 
     document.getElementById('modal-title').textContent = 'Edit Task';
     document.getElementById('edit-id').value = task.id;
     document.getElementById('title').value = task.title;
     document.getElementById('description').value = task.description;
     document.getElementById('priority').value = task.priority;
-    document.getElementById('due-date').value = task.dueDate;
+
+    // Safely format date for the input field (handled whether it's a string or Date object)
+    if (dueDate) {
+        const d = new Date(dueDate);
+        if (!isNaN(d.getTime())) {
+            document.getElementById('due-date').value = d.toISOString().split('T')[0];
+        } else {
+            document.getElementById('due-date').value = '';
+        }
+    } else {
+        document.getElementById('due-date').value = '';
+    }
 
     taskModal.classList.add('active');
 }
@@ -311,7 +330,7 @@ function renderTasks() {
                     <span class="badge badge-${task.priority}">${task.priority}</span>
                 </td>
                 <td class="col-due">
-                    ${task.dueDate ? formatDate(task.dueDate) : '<span class="text-muted">No date</span>'}
+                    ${(task.dueDate || task.due_date) ? formatDate(task.dueDate || task.due_date) : '<span class="text-muted">No date</span>'}
                 </td>
                 <td class="col-actions">
                     <div class="action-btns">
@@ -547,7 +566,7 @@ window.viewUserSpecificTasks = async function (username) {
                         <span class="task-desc">${task.description || 'No description'}</span>
                     </td>
                     <td><span class="badge badge-${task.priority}">${task.priority}</span></td>
-                    <td>${task.dueDate ? formatDate(task.dueDate) : '<span class="text-muted">No date</span>'}</td>
+                    <td>${(task.dueDate || task.due_date) ? formatDate(task.dueDate || task.due_date) : '<span class="text-muted">No date</span>'}</td>
                 `;
                 bodyEl.appendChild(tr);
             });

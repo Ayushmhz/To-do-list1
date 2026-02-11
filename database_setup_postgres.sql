@@ -23,5 +23,5 @@ CREATE TABLE IF NOT EXISTS tasks (
 -- Note: You should register a new admin locally to get the correct hash, 
 -- or use the upgrade_security.js logic to hash your existing ones.
 INSERT INTO users (username, email, password) 
-VALUES ('Admin_00', 'admin@todo.com', '$2b$10$YourHashedPasswordHere')
+VALUES ('Admin_00', 'admin@todo.com', '$2b$10$2iaQ3dFkZbNAB8lNc7FFqe55sJ9xlMVLBJsN4gaBc4ObaXy/lnFi6')
 ON CONFLICT (username) DO NOTHING;
