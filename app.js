@@ -479,6 +479,9 @@ async function renderAdminDashboard() {
                             <button class="btn-icon btn-edit" onclick="viewUserSpecificTasks('${u.username}')" title="View User Tasks">
                                 <i class="fas fa-eye"></i>
                             </button>
+                            <button class="btn-icon btn-edit" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1);" onclick="adminResetPassword('${u.username}')" title="Reset Password">
+                                <i class="fas fa-key"></i>
+                            </button>
                             ${!isSelf ? `
                                 <button class="btn-icon btn-delete" onclick="deleteSpecificUser('${u.username}')" title="Delete User">
                                     <i class="fas fa-trash"></i>
@@ -528,6 +531,37 @@ window.deleteSpecificUser = async function (username) {
         }
     } catch (error) {
         console.error('Delete user error:', error);
+    }
+};
+
+window.adminResetPassword = async function (targetUsername) {
+    const adminUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!adminUser) return;
+
+    const newPass = prompt(`Resetting password for "${targetUsername}". Enter new temporary password:`, "123456");
+    if (!newPass) return;
+
+    try {
+        const response = await fetch(`${SERVICE_URL}/admin/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminUsername: adminUser.username,
+                targetUsername: targetUsername,
+                newPassword: newPass
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert(data.message);
+        } else {
+            alert(data.error || 'Failed to reset password.');
+        }
+    } catch (error) {
+        console.error('Reset error:', error);
+        alert('Could not complete reset.');
     }
 };
 

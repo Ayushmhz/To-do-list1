@@ -236,7 +236,54 @@ app.get('/api/admin/users', async (req, res) => {
     }
 });
 
-// ... Other admin endpoints would follow a similar pattern ...
+// Admin Reset Password
+app.post('/api/admin/reset-password', async (req, res) => {
+    try {
+        const { adminUsername, targetUsername, newPassword } = req.body;
+
+        if (!adminUsername || adminUsername.toLowerCase() !== 'admin_00') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
+        if (!targetUsername || !newPassword) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        const [result] = await db.execute(
+            'UPDATE users SET password = $1 WHERE username = $2',
+            [hashedPassword, targetUsername]
+        );
+
+        res.json({ success: true, message: `Password for ${targetUsername} has been reset.` });
+    } catch (error) {
+        console.error('Admin reset password error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Delete specific user (Admin)
+app.delete('/api/admin/users/:username', async (req, res) => {
+    try {
+        const { username } = req.params;
+        const { adminUsername } = req.query;
+
+        if (!adminUsername || adminUsername.toLowerCase() !== 'admin_00') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
+        if (username.toLowerCase() === 'admin_00') {
+            return res.status(400).json({ error: 'Cannot delete admin account' });
+        }
+
+        await db.execute('DELETE FROM users WHERE username = $1', [username]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Admin delete user error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`✅ Server running at http://localhost:${PORT}`);
