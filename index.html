@@ -15,23 +15,23 @@
 <body class="auth-mode">
     <div class="glass-background"></div>
 
-    <!-- Global Theme Toggle -->
-    <div class="global-actions">
-        <div class="theme-switch-container">
-            <i class="fas fa-moon"></i>
-            <label class="theme-switch">
-                <input type="checkbox" id="theme-checkbox">
-                <span class="slider"></span>
-            </label>
-            <i class="fas fa-sun"></i>
-        </div>
-    </div>
+    <!-- Global Theme Toggle removed from here -->
 
 
     <!-- Authentication Overlay -->
     <div id="auth-overlay" class="auth-overlay">
         <div class="auth-card glass">
             <div class="auth-header">
+                <div class="theme-switch-auth">
+                    <div class="theme-switch-container">
+                        <i class="fas fa-moon"></i>
+                        <label class="theme-switch">
+                            <input type="checkbox" class="theme-checkbox">
+                            <span class="slider"></span>
+                        </label>
+                        <i class="fas fa-sun"></i>
+                    </div>
+                </div>
                 <i class="fas fa-list-check"></i>
                 <h2 id="auth-title">Create Account</h2>
                 <p id="auth-subtitle">Join us to manage your tasks efficiently</p>
@@ -107,6 +107,16 @@
                 <h1>To-do-List Management System</h1>
             </div>
             <div class="header-actions">
+                <div class="global-actions">
+                    <div class="theme-switch-container">
+                        <i class="fas fa-moon"></i>
+                        <label class="theme-switch">
+                            <input type="checkbox" id="theme-checkbox" class="theme-checkbox">
+                            <span class="slider"></span>
+                        </label>
+                        <i class="fas fa-sun"></i>
+                    </div>
+                </div>
                 <span id="user-display" class="user-greeting"></span>
                 <button id="admin-dash-btn" class="btn-icon hidden" title="Admin Dashboard">
                     <i class="fas fa-user-shield"></i>

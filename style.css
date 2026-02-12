@@ -139,10 +139,8 @@ header {
 
 /* Global Theme Toggle Switch */
 .global-actions {
-    position: fixed;
-    top: 1.5rem;
-    right: 1.5rem;
-    z-index: 2000;
+    display: flex;
+    align-items: center;
 }
 
 .theme-switch-container {
@@ -223,6 +221,18 @@ input:checked+.slider:before {
 
 [data-theme="dark"] .slider {
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Auth Theme Switch */
+.theme-switch-auth {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.theme-switch-auth .theme-switch-container {
+    padding: 0.4rem 0.8rem;
+    background: var(--input-bg);
 }
 
 /* Stats */
@@ -977,9 +987,18 @@ body:not(.auth-mode) #main-app {
 
     .header-actions {
         width: 100%;
-        justify-content: space-between;
+        justify-content: center;
+        /* Center for mobile */
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: 0.75rem;
+    }
+
+    .global-actions {
+        width: 100%;
+        justify-content: center;
+        order: -1;
+        /* Toggle on top for mobile header */
+        margin-bottom: 0.5rem;
     }
 
     .logo {

@@ -11,7 +11,7 @@ const taskBody = document.getElementById('task-body');
 const taskModal = document.getElementById('task-modal');
 const openModalBtn = document.getElementById('open-modal');
 const closeModalBtns = document.querySelectorAll('.close-modal');
-const themeCheckbox = document.getElementById('theme-checkbox');
+const themeCheckboxes = document.querySelectorAll('.theme-checkbox');
 const taskSearch = document.getElementById('task-search');
 const filterStatus = document.getElementById('filter-status');
 const filterPriority = document.getElementById('filter-priority');
@@ -27,10 +27,9 @@ const completedTasksEl = document.getElementById('completed-tasks');
 
 function applyTheme() {
     document.documentElement.setAttribute('data-theme', currentTheme);
-    if (themeCheckbox) {
-        // Unchecked = Dark (Left/Moon), Checked = Light (Right/Sun)
-        themeCheckbox.checked = currentTheme === 'light';
-    }
+    themeCheckboxes.forEach(cb => {
+        cb.checked = currentTheme === 'light';
+    });
 }
 
 // Initialize App
@@ -56,15 +55,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. apply theme immediately
     applyTheme();
 
-    // 2. Attach listener
-    if (themeCheckbox) {
-        themeCheckbox.addEventListener('change', () => {
-            currentTheme = themeCheckbox.checked ? 'light' : 'dark';
+    // 2. Attach listeners
+    themeCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            currentTheme = cb.checked ? 'light' : 'dark';
             localStorage.setItem('theme', currentTheme);
             applyTheme();
         });
-    } else {
-        console.error('Theme checkbox not found in DOM');
+    });
+
+    if (themeCheckboxes.length === 0) {
+        console.warn('No theme checkboxes found in DOM');
     }
 
     // 3. Check Session
