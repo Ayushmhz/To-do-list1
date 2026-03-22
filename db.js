@@ -1,16 +1,14 @@
-const { Pool } = require('pg');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
-// PostgreSQL connection configuration
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME}`,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
-
-module.exports = {
-    execute: async (text, params) => {
-        const result = await pool.query(text, params);
-        return [result.rows, result.fields];
-    },
-    pool
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/todo-list');
+        console.log('🛢️ Connected to MongoDB');
+    } catch (err) {
+        console.error('MongoDB connection error:', err);
+        process.exit(1);
+    }
 };
+
+module.exports = connectDB;

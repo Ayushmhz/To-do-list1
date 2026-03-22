@@ -3,12 +3,17 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
-const db = require('./db');
+const connectDB = require('./db');
+const User = require('./models/User');
+const Task = require('./models/Task');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB
+connectDB();
 
 // Middleware
 app.use(cors());
@@ -33,21 +38,20 @@ app.post('/api/register', async (req, res) => {
         }
 
         // Check if user exists
-        const [existing] = await db.execute(
-            'SELECT * FROM users WHERE username = $1 OR email = $2',
-            [username, email]
-        );
+        const existing = await User.findOne({ $or: [{ username }, { email }] });
 
-        if (existing.length > 0) {
+        if (existing) {
             return res.status(400).json({ error: 'Username or Email already exists!' });
         }
 
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        await db.execute(
-            'INSERT INTO users (username, email, password) VALUES ($1, $2, $3)',
-            [username, email, hashedPassword]
-        );
+        const newUser = new User({
+            username,
+            email,
+            password: hashedPassword
+        });
+        await newUser.save();
 
         res.json({ success: true, message: 'User registered successfully' });
     } catch (error) {
@@ -64,13 +68,9 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Please enter your credentials.' });
         }
 
-        const [users] = await db.execute(
-            'SELECT * FROM users WHERE username = $1',
-            [username]
-        );
+        const user = await User.findOne({ username });
 
-        if (users.length > 0) {
-            const user = users[0];
+        if (user) {
             const isMatch = await bcrypt.compare(password, user.password);
 
             if (isMatch) {
@@ -98,10 +98,9 @@ app.post('/api/change-password', async (req, res) => {
             return res.status(400).json({ error: 'All fields are required.' });
         }
 
-        const [users] = await db.execute('SELECT * FROM users WHERE username = $1', [username]);
-        if (users.length === 0) return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-        const user = users[0];
         const isMatch = await bcrypt.compare(currentPassword, user.password);
 
         if (!isMatch) {
@@ -109,7 +108,8 @@ app.post('/api/change-password', async (req, res) => {
         }
 
         const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
-        await db.execute('UPDATE users SET password = $1 WHERE id = $2', [hashedNewPassword, user.id]);
+        user.password = hashedNewPassword;
+        await user.save();
 
         res.json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
@@ -126,14 +126,23 @@ app.get('/api/tasks', async (req, res) => {
         const { username } = req.query;
         if (!username) return res.status(400).json({ error: 'Username required' });
 
-        const [tasks] = await db.execute(
-            `SELECT t.id, t.title, t.description, t.priority, t.due_date AS "dueDate", t.status, t.created_at AS "createdAt"
-             FROM tasks t 
-             JOIN users u ON t.user_id = u.id 
-             WHERE u.username = $1 ORDER BY t.created_at DESC`,
-            [username]
-        );
-        res.json({ tasks });
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const tasks = await Task.find({ user_id: user._id }).sort({ created_at: -1 });
+        
+        // Map fields to match previous SQL response
+        const formattedTasks = tasks.map(t => ({
+            id: t._id,
+            title: t.title,
+            description: t.description,
+            priority: t.priority,
+            dueDate: t.due_date,
+            status: t.status,
+            createdAt: t.created_at
+        }));
+
+        res.json({ tasks: formattedTasks });
     } catch (error) {
         console.error('Get tasks error:', error);
         res.status(500).json({ error: 'Server error' });
@@ -146,20 +155,32 @@ app.post('/api/tasks', async (req, res) => {
         const { username, task } = req.body;
         if (!username || !task) return res.status(400).json({ error: 'Missing data' });
 
-        const [user] = await db.execute('SELECT id FROM users WHERE username = $1', [username]);
-        if (user.length === 0) return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-        await db.execute(
-            'INSERT INTO tasks (user_id, title, description, priority, due_date, status) VALUES ($1, $2, $3, $4, $5, $6)',
-            [user[0].id, task.title, task.description, task.priority, task.dueDate || null, task.status || 'pending']
-        );
+        const newTask = new Task({
+            user_id: user._id,
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            due_date: task.dueDate || null,
+            status: task.status || 'pending'
+        });
+        await newTask.save();
 
         // Fetch updated tasks
-        const [tasks] = await db.execute(
-            'SELECT id, title, description, priority, due_date AS "dueDate", status, created_at AS "createdAt" FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
-            [user[0].id]
-        );
-        res.json({ success: true, tasks });
+        const tasks = await Task.find({ user_id: user._id }).sort({ created_at: -1 });
+        const formattedTasks = tasks.map(t => ({
+            id: t._id,
+            title: t.title,
+            description: t.description,
+            priority: t.priority,
+            dueDate: t.due_date,
+            status: t.status,
+            createdAt: t.created_at
+        }));
+
+        res.json({ success: true, tasks: formattedTasks });
     } catch (error) {
         console.error('Create task error:', error);
         res.status(500).json({ error: 'Server error' });
@@ -172,19 +193,32 @@ app.put('/api/tasks/:id', async (req, res) => {
         const { id } = req.params;
         const { username, task } = req.body;
 
-        const [user] = await db.execute('SELECT id FROM users WHERE username = $1', [username]);
-        if (user.length === 0) return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-        await db.execute(
-            'UPDATE tasks SET title = $1, description = $2, priority = $3, due_date = $4, status = $5 WHERE id = $6 AND user_id = $7',
-            [task.title, task.description, task.priority, task.dueDate || null, task.status, id, user[0].id]
+        await Task.findOneAndUpdate(
+            { _id: id, user_id: user._id },
+            {
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                due_date: task.dueDate || null,
+                status: task.status
+            }
         );
 
-        const [tasks] = await db.execute(
-            'SELECT id, title, description, priority, due_date AS "dueDate", status, created_at AS "createdAt" FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
-            [user[0].id]
-        );
-        res.json({ success: true, tasks });
+        const tasks = await Task.find({ user_id: user._id }).sort({ created_at: -1 });
+        const formattedTasks = tasks.map(t => ({
+            id: t._id,
+            title: t.title,
+            description: t.description,
+            priority: t.priority,
+            dueDate: t.due_date,
+            status: t.status,
+            createdAt: t.created_at
+        }));
+
+        res.json({ success: true, tasks: formattedTasks });
     } catch (error) {
         console.error('Update task error:', error);
         res.status(500).json({ error: 'Server error' });
@@ -197,16 +231,23 @@ app.delete('/api/tasks/:id', async (req, res) => {
         const { id } = req.params;
         const { username } = req.query;
 
-        const [user] = await db.execute('SELECT id FROM users WHERE username = $1', [username]);
-        if (user.length === 0) return res.status(404).json({ error: 'User not found' });
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-        await db.execute('DELETE FROM tasks WHERE id = $1 AND user_id = $2', [id, user[0].id]);
+        await Task.findOneAndDelete({ _id: id, user_id: user._id });
 
-        const [tasks] = await db.execute(
-            'SELECT id, title, description, priority, due_date AS "dueDate", status, created_at AS "createdAt" FROM tasks WHERE user_id = $1 ORDER BY created_at DESC',
-            [user[0].id]
-        );
-        res.json({ success: true, tasks });
+        const tasks = await Task.find({ user_id: user._id }).sort({ created_at: -1 });
+        const formattedTasks = tasks.map(t => ({
+            id: t._id,
+            title: t.title,
+            description: t.description,
+            priority: t.priority,
+            dueDate: t.due_date,
+            status: t.status,
+            createdAt: t.created_at
+        }));
+
+        res.json({ success: true, tasks: formattedTasks });
     } catch (error) {
         console.error('Delete task error:', error);
         res.status(500).json({ error: 'Server error' });
@@ -222,14 +263,20 @@ app.get('/api/admin/users', async (req, res) => {
             return res.status(403).json({ error: 'Admin access required' });
         }
 
-        const [users] = await db.execute(`
-            SELECT u.id, u.username, u.email, u.password, COUNT(t.id) as "taskCount" 
-            FROM users u 
-            LEFT JOIN tasks t ON u.id = t.user_id 
-            GROUP BY u.id, u.username, u.email, u.password
-        `);
+        const users = await User.find({});
+        
+        const formattedUsers = await Promise.all(users.map(async u => {
+            const taskCount = await Task.countDocuments({ user_id: u._id });
+            return {
+                id: u._id,
+                username: u.username,
+                email: u.email,
+                password: u.password,
+                taskCount: taskCount
+            };
+        }));
 
-        res.json({ users });
+        res.json({ users: formattedUsers });
     } catch (error) {
         console.error('Admin get users error:', error);
         res.status(500).json({ error: 'Server error' });
@@ -251,10 +298,14 @@ app.post('/api/admin/reset-password', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-        const [result] = await db.execute(
-            'UPDATE users SET password = $1 WHERE username = $2',
-            [hashedPassword, targetUsername]
+        const result = await User.findOneAndUpdate(
+            { username: targetUsername },
+            { password: hashedPassword }
         );
+        
+        if (!result) {
+            return res.status(404).json({ error: 'User not found' });
+        }
 
         res.json({ success: true, message: `Password for ${targetUsername} has been reset.` });
     } catch (error) {
@@ -277,7 +328,11 @@ app.delete('/api/admin/users/:username', async (req, res) => {
             return res.status(400).json({ error: 'Cannot delete admin account' });
         }
 
-        await db.execute('DELETE FROM users WHERE username = $1', [username]);
+        const user = await User.findOneAndDelete({ username });
+        if (user) {
+            await Task.deleteMany({ user_id: user._id });
+        }
+
         res.json({ success: true });
     } catch (error) {
         console.error('Admin delete user error:', error);
@@ -287,5 +342,5 @@ app.delete('/api/admin/users/:username', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`✅ Server running at http://localhost:${PORT}`);
-    console.log(`🛢️  Connected via PostgreSQL Connection Pool`);
+    console.log(`🛢️  Connected via MongoDB Mongoose`);
 });
