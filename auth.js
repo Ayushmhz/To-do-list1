@@ -1,5 +1,5 @@
 // Authentication Logic
-const API_URL = '/api';
+const API_URL = 'https://to-do-list-npil.onrender.com/api';
 
 
 const authOverlay = document.getElementById('auth-overlay');

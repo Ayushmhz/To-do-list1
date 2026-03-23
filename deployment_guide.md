@@ -1,35 +1,42 @@
-# Live Hosting Guide (Render)
+# Live Hosting Guide (MongoDB + Node.js)
 
-Follow these steps to host your To-Do List Management System on the internet for free.
+Since you've migrated your application to a Full-Stack Node.js app with **MongoDB**, the easiest way to host this for free is using **MongoDB Atlas** for the database and **Render** for the server. Your Vanilla CSS/JS frontend is automatically served from the root by your backend!
 
-## 1. Prepare your Database
-Since your app now uses **PostgreSQL**, hosting on Render is even easier:
-- Go to your Render Dashboard.
-- Click **New +** > **PostgreSQL**.
-- Give it a name (e.g., `todo-db`) and click **Create Database**.
-- Wait for it to become "Available".
-- Copy the **Internal Database URL** (for Render services) or **External Database URL** (for local testing).
+## Step 1: Host Your Database on MongoDB Atlas
+1. Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) and sign up for a free account.
+2. Create a **New Cluster** (select the FREE Shared tier, usually M0).
+3. Once the cluster is created, click **Connect**.
+4. Set up your connection security:
+   - Create a **Database User** (with a username and password). *Remember this password!*
+   - Under **IP Access List**, choose **Allow Access from Anywhere** (or enter `0.0.0.0/0`) so that Render's servers can communicate with it.
+5. Click **Connect to your application** (Drivers).
+6. **Copy your Connection String**. It will look something like this:
+   `mongodb+srv://<username>:<password>@cluster0.abcde.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+   *(Important: Replace `<password>` in the string with the actual password you just created!)*
 
-## 2. Prepare your Code
-- Ensure your code is in a **GitHub Repository**.
-- Push your latest changes (including the new `pg` configuration).
+## Step 2: Push Your Code to GitHub
+Ensure all your latest files (`server.js`, `db.js`, `package.json`, `index.html`, etc.) are pushed to a GitHub repository.
 
-## 3. Deploy on Render
-- Click **New +** > **Web Service**.
-- Connect your GitHub repository.
-- **Environment Settings**:
-  - **Runtime**: `Node`
-  - **Build Command**: `npm install`
-  - **Start Command**: `node server.js`
-- **Environment Variables**:
-  Add the following:
-  - `DATABASE_URL`: Paste your **Internal Database URL** from Step 1.
-  - `NODE_ENV`: `production` (This enables secure SSL connections).
+## Step 3: Deploy Your App on Render
+1. Go to your [Render Dashboard](https://dashboard.render.com/) and create a free account.
+2. Click **New +** and select **Web Service**.
+3. Connect your GitHub account and select your To-Do list repository.
+4. Fill out the **Environment Settings**:
+   - **Name**: Give your app a name (e.g., `my-cool-todo-app`).
+   - **Environment/Runtime**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `node server.js`
+5. **Environment Variables**:
+   Scroll down to the "Environment Variables" section and click "Add Environment Variable". Add one important key:
+   - **Key**: `MONGODB_URI`
+   - **Value**: Paste the Connection String you got from MongoDB Atlas in Step 1.
+6. Click **Create Web Service**.
 
-## 4. Final Updates
-- Once deployed, Render will give you a URL like `https://todo-app.onrender.com`.
-- Open that URL and your app is live!
+## Step 4: Final Checks
+- Render will start executing your Build Command. It might take 2-3 minutes.
+- Once deployed, it will say **Live** and give you a URL at the top left of the dashboard (looks like `https://your-app-name.onrender.com`).
+- Click that link, and your site is live! Your server will automatically host both your API and your frontend website.
 
 ---
 > [!TIP]
-> **Admin Password**: Since we added Bcrypt security, your old plain-text passwords in the local database won't work on the live site. You should register a new user on the live site to test.
+> **Admin Account**: Since you just created a fresh database on MongoDB Atlas, it has no users or data. You will need to register a new user on your live URL to start testing it. There is no need to migrate your local test users!

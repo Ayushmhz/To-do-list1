@@ -1,5 +1,5 @@
 // API Configuration
-const SERVICE_URL = '/api';
+const SERVICE_URL = 'https://to-do-list-npil.onrender.com/api';
 
 // State Management
 let tasks = [];
