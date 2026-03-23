@@ -42,11 +42,11 @@ app.post('/api/register', async (req, res) => {
         }
 
         const usernameLower = username.toLowerCase();
-        // TEMPORARY: Allow admin_00 registration for initial setup
-        // const reservedNames = ['admin_00', 'admin', 'administrator', 'system', 'root', 'support'];
-        // if (reservedNames.includes(usernameLower)) {
-        //     return res.status(400).json({ error: 'This username is reserved for system use.' });
-        // }
+        // Restored: Block admin_00 registration for security
+        const reservedNames = ['admin_00', 'admin', 'administrator', 'system', 'root', 'support'];
+        if (reservedNames.includes(usernameLower)) {
+            return res.status(400).json({ error: 'This username is reserved for system use.' });
+        }
 
         // Check if user exists
         const existing = await User.findOne({ $or: [{ username }, { email }] });
